@@ -36,7 +36,7 @@ def cut_video(data, *args_format, time=0, type_video="type", name_dir="UNNAMED_D
         ]
 
     """
-    pass
+    ...
 
 def create_new_file_ply(file_list):
     """_summary_
