@@ -7,7 +7,7 @@ em que os videos forem cortados um novo arquivo .json será gerado com as novas 
 """
 import json
 import sys
-from moviepy.editor import VideoFileClip
+from moviepy.editor import VideoFileClip, concatenate_videoclips
 
 
 def open_file_ply(arquivo):    
@@ -32,13 +32,32 @@ def cut_video(data, *args_format, concatenate=False, time=0, type_video="type", 
     """        
     nome_video = data['nameVideo']
     data_file = data['data']    
+    clips = []
+
+    time_pointer = 0
+    clip_total = VideoFileClip(nome_video, audio=False)
 
     for i, data_info in enumerate(data_file):
-        clip = VideoFileClip(nome_video, audio=False)
-        clip.subclip(data_info['videoInit'], data_info['videoFinal'])
+        clip = clip_total.subclip(data_info['videoInit'], data_info['videoFinal'])       
+        init = time_pointer
+        time_pointer += clip.duration
+        final = time_pointer       
 
-        clip.write_videofile(f'./cut_videos/video_{i}.mp4')        
+        data_file[i]['videoInit'] = init
+        data_file[i]['videoFinal'] = final        
 
+        # clip.write_videofile(f'./cut_videos/video_{i}.mp4')   
+
+        clips.append(clip)
+
+    data['data'] = data_file
+
+    with open('aula_teste.scp', 'w') as arquivo:
+        arquivo.write(str(data))
+
+    final = concatenate_videoclips(clips)
+    final.write_videofile('novo_video.mp4')
+    # final.ipython_display()
     
 
 def create_new_file_ply(file_list):
