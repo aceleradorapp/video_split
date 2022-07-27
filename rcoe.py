@@ -7,20 +7,14 @@ em que os videos forem cortados um novo arquivo .json será gerado com as novas 
 """
 import json
 import sys
-from moviepy.editor import (VideoFileClip)
+from moviepy.editor import VideoFileClip
 
 
-def open_file_ply(file):
-    """_summary_
+def open_file_ply(arquivo):    
+    with open(arquivo) as data:
+        return json.load(data)
 
-    Args:
-        file (_type_): _description_
-    Returns:
-
-    """
-    pass
-
-def cut_video(data, *args_format, time=0, type_video="type", name_dir="UNNAMED_DIR"):
+def cut_video(data, *args_format, concatenate=False, time=0, type_video="type", name_dir="UNNAMED_DIR"):
     """_summary_
 
     Args:
@@ -35,8 +29,17 @@ def cut_video(data, *args_format, time=0, type_video="type", name_dir="UNNAMED_D
             f"video_02_{type_video}":{"time_ini":0.11,"time_fin":0.55},
         ]
 
-    """
-    ...
+    """        
+    nome_video = data['nameVideo']
+    data_file = data['data']    
+
+    for i, data_info in enumerate(data_file):
+        clip = VideoFileClip(nome_video, audio=False)
+        clip.subclip(data_info['videoInit'], data_info['videoFinal'])
+
+        clip.write_videofile(f'./cut_videos/video_{i}.mp4')        
+
+    
 
 def create_new_file_ply(file_list):
     """_summary_
@@ -45,3 +48,6 @@ def create_new_file_ply(file_list):
     """
     pass
 
+
+if __name__ == "__main__":
+    cut_video(open_file_ply('./Aula_01.ply'))
