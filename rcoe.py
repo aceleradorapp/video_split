@@ -1,72 +1,46 @@
-"""
-# Google Docstring Format #
-
-função responsável por cortar os videos em determinada sequência,
-para se guiar ele utiliza um arquivo '.ply' com os minutos e segundos e informações do vídeo. No momento
-em que os videos forem cortados um novo arquivo .json será gerado com as novas informações dos pequenos videos.
-"""
 import json
-import sys
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 
-
-def open_file_ply(arquivo):    
-    with open(arquivo) as data:
+def open_file_ply(arquivo, name_dir="UNNAMED_DIR"):    
+    with open(f'{name_dir}/{arquivo}') as data:
         return json.load(data)
 
-def cut_video(data, *args_format, concatenate=False, time=0, type_video="type", name_dir="UNNAMED_DIR"):
-    """_summary_
 
-    Args:
-        data (_type_): _description_
-        time (int, optional): _description_. Defaults to 0.
-        type_video (str, optional): _description_. Defaults to "type".
-        name_dir (str, optional): _description_. Defaults to "UNNAMED_DIR".
-    
-    Returns:
-        [
-            f"video_01_{type_video}":{"time_ini":0.01, "time_fin":0.10}, 
-            f"video_02_{type_video}":{"time_ini":0.11,"time_fin":0.55},
-        ]
-
-    """        
-    nome_video = data['nameVideo']
-    data_file = data['data']    
-    clips = []
-
-    time_pointer = 0
+def process_video(data_video, name_dir="UNNAMED_DIR"): 
+    nome_video = f'{name_dir}/{data_video["nameVideo"]}'   
     clip_total = VideoFileClip(nome_video, audio=False)
-
-    for i, data_info in enumerate(data_file):
-        clip = clip_total.subclip(data_info['videoInit'], data_info['videoFinal'])       
-        init = time_pointer
-        time_pointer += clip.duration
-        final = time_pointer       
-
-        data_file[i]['videoInit'] = init
-        data_file[i]['videoFinal'] = final        
-
-        # clip.write_videofile(f'./cut_videos/video_{i}.mp4')   
-
-        clips.append(clip)
-
-    data['data'] = data_file
-
-    with open('aula_teste.scp', 'w') as arquivo:
-        arquivo.write(str(data))
-
-    final = concatenate_videoclips(clips)
-    final.write_videofile('novo_video.mp4')
-    # final.ipython_display()
+    clips = [clip_total.subclip(data_info['videoInit'], data_info['videoFinal']) for data_info in data_video['data']]
+    list_drt = [dr.duration for dr in clips]
+    return (clips, list_drt)
     
 
-def create_new_file_ply(file_list):
-    """_summary_
-    Args:
-        file_list (_type_): _description_
-    """
-    pass
+def cut_format(clips, f_default:str, concatenate=False, name_dir="UNNAMED_DIR"):    
+    match f_default:
+        case 'video':
+            _= [clip.write_videofile(f'{name_dir}/cut_videos/video_{i+1}.mp4') for i, clip in enumerate(clips)]
+        case 'imagens':
+            _= [clip.write_images_sequence(f'{name_dir}/cut_videos/img_%01d.png') for clip in clips]
+        case 'giff':
+           _= [clip.write_gif(f'{name_dir}/cut_videos/gif_{i+1}.gif') for i, clip in enumerate(clips)]
+    
+    if concatenate:
+        final = concatenate_videoclips(clips)
+        final.write_videofile(f'{name_dir}/novo_video.mp4')
+
+
+def create_new_file_scp(database, list_drt, name_dir="UNNAMED_DIR"):
+    with open(f'{name_dir}/{database["nameVideo"][:-4]}.scp', 'w', encoding='utf-8') as outfile:        
+        time_pointer = 0.0
+        for df, ld in zip(database['data'], list_drt):
+            df['videoInit'], df['videoFinal'] = (time_pointer , (ld + time_pointer))
+            time_pointer += ld
+
+        json.dump(database, outfile, indent=4)  
 
 
 if __name__ == "__main__":
-    cut_video(open_file_ply('./Aula_01.ply'))
+    date_video = open_file_ply('Aula 01 word ver01.ply')
+    clips, list_drt = process_video(date_video)
+    create_new_file_scp(date_video, list_drt)
+
+    #cut_format(clips)
