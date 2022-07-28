@@ -30,12 +30,10 @@ def cut_format(clips, f_default:str, concatenate=False, name_dir="UNNAMED_DIR"):
 
 def create_new_file_scp(database, list_drt, name_dir="UNNAMED_DIR"):
     with open(f'{name_dir}/{database["nameVideo"][:-4]}.scp', 'w', encoding='utf-8') as outfile:        
-        data_file = database['data']
         time_pointer = 0.0
-        for df, ld in zip(data_file, list_drt):
+        for df, ld in zip(database['data'], list_drt):
             df['videoInit'], df['videoFinal'] = (time_pointer , (ld + time_pointer))
             time_pointer += ld
-        database['data'] = data_file
 
         json.dump(database, outfile, indent=4)  
 
